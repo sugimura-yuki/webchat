@@ -3,8 +3,8 @@ import { eventNames } from 'cluster';
 // import UUID from 'uuid';
 
 enum MessageType {
-    Self,
-    Others
+    Send,
+    Recieved,
 }
 type Message = { type: MessageType, message: string };
 interface State {
@@ -22,7 +22,7 @@ export default class extends React.Component {
     }
     constructor(props: {}) {
         super(props);
-        const socket = new WebSocket('ws://localhost:80808');
+        const socket = new WebSocket('ws://192.168.57.24:8080');
         socket.addEventListener("open", (e: Event) => {
             this.setState({ opened: true });
         });
@@ -30,8 +30,9 @@ export default class extends React.Component {
             this.setState({ opened: false });
         });
         socket.addEventListener("message", (e: MessageEvent) => {
+            console.log(e);
             this.setState({
-                messages: this.state.messages.concat({ type: MessageType.Others, message: e.data }),
+                messages: this.state.messages.concat({ type: MessageType.Recieved, message: e.data }),
             });
         });
         this.socket = socket;
@@ -45,16 +46,16 @@ export default class extends React.Component {
                 {this.state.messages.map((v, i) => {
                     let style: CSSProperties = {};
                     switch (v.type) {
-                        case MessageType.Self:
+                        case MessageType.Send:
                             style.textAlign = 'right';
                             break;
-                        case MessageType.Others:
+                        case MessageType.Recieved:
                             style.textAlign = 'left';
                             style.color = 'red';
                             break;
                     }
                     return (
-                        <div style={style}>{v.message}</div>
+                        <div style={style} key={i}>{v.message}</div>
                     )
                 })}
             </div>
@@ -66,7 +67,7 @@ export default class extends React.Component {
             this.socket.send(message);
             this.setState({
                 myMessage: '',
-                messages: this.state.messages.concat({ type: MessageType.Self, message }),
+                messages: this.state.messages.concat({ type: MessageType.Send, message }),
             });
         } catch (e) {
             alert('failed to send message');
